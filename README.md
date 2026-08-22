@@ -29,6 +29,12 @@ vp run -r test
 
 基準画像は撮影プラットフォームごとに別ファイル（`preview-chromium-darwin.png` / `-linux.png`）。見た目を意図的に変えたら、手元で `vp run website#test -u`、Linux 用は `gh workflow run update-screenshots.yml` の artifact を持ち帰ってコミットする。
 
+## 1マスの縦横比について
+
+`cellAspect` は「1マスが元画像のどれだけを受け持つか」で、出力先によって正しい値が違います。ターミナル（`toAnsi`）は 2、HTML は描画フォント次第（`line-height: 1` の等幅フォントで約 1.66）。SVG はどの値でも比率が保たれます。
+
+Web ツールは決め打ちにせず、`measureCellAspect()` でプレビューの実際の文字セルを測って初期値にしています。
+
 ## デプロイ
 
 `apps/website` は Cloudflare Workers の静的アセットとして配信する。main にマージされると CI が自動でデプロイする。

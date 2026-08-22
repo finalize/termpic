@@ -1,5 +1,6 @@
 import type { Bitmap, Grid } from "termpic";
 import { convert, toAnsi, toHtml, toSvg, toText } from "termpic";
+import { measureCellAspect } from "./cell.ts";
 import { readBitmap, sampleBitmap } from "./image.ts";
 import { toConvertOptions } from "./options.ts";
 import type { FormValues } from "./options.ts";
@@ -57,6 +58,10 @@ export function mount(root: HTMLElement): void {
       </select>
     </div>
     <div class="field">
+      <label for="aspect">1マスの縦横比</label>
+      <input id="aspect" type="number" min="1" max="4" step="0.01" />
+    </div>
+    <div class="field">
       <label for="background">置く背景</label>
       <select id="background">
         <option value="dark">暗い背景</option>
@@ -99,7 +104,11 @@ export function mount(root: HTMLElement): void {
   const drop = root.querySelector<HTMLLabelElement>(".drop")!;
   const tabs = [...root.querySelectorAll<HTMLButtonElement>("[data-format]")];
 
-  const controls = ["mode", "cols", "palette", "dither", "background"] as const;
+  const controls = ["mode", "cols", "palette", "dither", "background", "aspect"] as const;
+
+  // 実際の文字セルに合わせないと、HTML として描いたときに絵が歪む
+  const aspectInput = $<HTMLInputElement>("aspect");
+  aspectInput.value = measureCellAspect(preview).toFixed(2);
   let bitmap: Bitmap = sampleBitmap();
   let format: Format = "html";
   let grid: Grid | undefined;
@@ -126,9 +135,13 @@ export function mount(root: HTMLElement): void {
   };
 
   const render = (): void => {
-    grid = convert(bitmap, toConvertOptions(values()));
+    const cellAspect = Number.parseFloat(aspectInput.value);
+    grid = convert(bitmap, {
+      ...toConvertOptions(values()),
+      ...(Number.isFinite(cellAspect) && cellAspect > 0 ? { cellAspect } : {}),
+    });
     preview.innerHTML = toHtml(grid, { alt: "変換結果のプレビュー" });
-    meta.textContent = `${grid.cols} × ${grid.rows} マス（元の画像 ${bitmap.width} × ${bitmap.height}）`;
+    meta.textContent = `${grid.cols} × ${grid.rows} マス（元の画像 ${bitmap.width} × ${bitmap.height} / 1マスの縦横比 ${grid.cellAspect.toFixed(2)}）`;
 
     const serialized = serialize(grid);
     output.value = serialized;
