@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { estimateCells, SITE_PALETTE, toConvertOptions } from "../src/options.ts";
+import { estimateCells, SITE_PALETTE, toColorMapping, toConvertOptions } from "../src/options.ts";
 
 const base = {
   mode: "halfblock",
@@ -38,4 +38,13 @@ test("site を選ぶとサイトのパレットになる", () => {
 test("マス数の見積もりは縦横比を考える", () => {
   // 正方形の画像・セルは縦2倍 → 行数は列数の半分
   expect(estimateCells(60, 2, 1)).toBe(60 * 30);
+});
+
+test("site-vars でも量子化には同じパレットを使う", () => {
+  expect(toConvertOptions({ ...base, palette: "site-vars" }).palette).toEqual([...SITE_PALETTE]);
+});
+
+test("CSS 変数への差し替えは site-vars のときだけ", () => {
+  expect(toColorMapping({ ...base, palette: "site" })).toBeUndefined();
+  expect(toColorMapping({ ...base, palette: "site-vars" })!["#7ee787"]).toBe("var(--accent)");
 });

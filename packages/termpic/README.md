@@ -51,6 +51,25 @@ SVG は矩形を `cellAspect` 倍の高さで描くので自己完結してい�
 
 **HTML は同じ色が続く区間をまとめる。** SVG も横に続く同色の矩形を1つにまとめるので、平坦な部分が多い画像では出力が10分の1近くまで縮みます。
 
+## テーマに追従させる
+
+出力する色を CSS 変数に差し替えられます。役割（変数名）で色を持つので、ライト/ダークでトークンの値が入れ替わるサイトなら、絵もテーマの切り替えに追従します。画像ではできない振る舞いです。
+
+```ts
+import { convert, cssVariablePalette, toSvg } from "termpic";
+
+const { palette, colors } = cssVariablePalette({
+  "--bg": "#0b0e0f",
+  "--fg": "#cfd8d3",
+  "--accent": "#7ee787",
+});
+
+const grid = convert(bitmap, { palette, dither: true });
+toSvg(grid, { colors }); // fill="var(--accent)" が出る
+```
+
+`toAnsi` は実際の色の数値が要るので差し替えません。
+
 ## 貼り付け先に必要な CSS
 
 ```css

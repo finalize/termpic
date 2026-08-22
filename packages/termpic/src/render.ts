@@ -45,7 +45,16 @@ export function toText(grid: Grid): string {
   return lines.join("\n");
 }
 
-export interface HtmlOptions {
+/** 出力する色を差し替える対応表。`#7ee787` → `var(--accent)` のように使う */
+export interface ColorMapping {
+  colors?: Readonly<Record<string, string>>;
+}
+
+function mapColor(color: string, colors: ColorMapping["colors"]): string {
+  return colors?.[color] ?? color;
+}
+
+export interface HtmlOptions extends ColorMapping {
   /** <pre> に付けるクラス名。既定 "termpic" */
   className?: string;
   /** 読み上げ用の説明。指定すると role="img" と aria-label が付く */
@@ -60,7 +69,11 @@ export function toHtml(grid: Grid, options: HtmlOptions = {}): string {
   const body = Array.from({ length: grid.rows }, (_, row) =>
     runsOfRow(grid, row)
       .map((run) => {
-        const style = run.bg ? `color:${run.fg};background:${run.bg}` : `color:${run.fg}`;
+        const fg = mapColor(run.fg, options.colors);
+        const style =
+          run.bg === undefined
+            ? `color:${fg}`
+            : `color:${fg};background:${mapColor(run.bg, options.colors)}`;
         return `<span style="${style}">${escapeHtml(run.text)}</span>`;
       })
       .join(""),
@@ -73,7 +86,7 @@ export function toHtml(grid: Grid, options: HtmlOptions = {}): string {
   return `<pre ${attributes.join(" ")}>${body}</pre>`;
 }
 
-export interface SvgOptions {
+export interface SvgOptions extends ColorMapping {
   /** 1マスの幅（px）。高さは cellAspect 倍になる。既定 8 */
   cellSize?: number;
   alt?: string;
@@ -103,7 +116,7 @@ export function toSvg(grid: Grid, options: SvgOptions = {}): string {
         if (col < grid.cols && colorAt(col) === colorAt(start)) continue;
         const width = (col - start) * cellW;
         parts.push(
-          `<rect x="${start * cellW}" y="${y}" width="${width}" height="${halfH}" fill="${colorAt(start)}"/>`,
+          `<rect x="${start * cellW}" y="${y}" width="${width}" height="${halfH}" fill="${mapColor(colorAt(start), options.colors)}"/>`,
         );
         start = col;
       }
@@ -117,7 +130,10 @@ export function toSvg(grid: Grid, options: SvgOptions = {}): string {
   } else {
     for (let row = 0; row < grid.rows; row++) {
       const spans = runsOfRow(grid, row)
-        .map((run) => `<tspan fill="${run.fg}">${escapeHtml(run.text)}</tspan>`)
+        .map(
+          (run) =>
+            `<tspan fill="${mapColor(run.fg, options.colors)}">${escapeHtml(run.text)}</tspan>`,
+        )
         .join("");
       const baseline = row * cellH + cellH * 0.78;
       parts.push(

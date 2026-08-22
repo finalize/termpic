@@ -1,6 +1,14 @@
 import { expect, test } from "vite-plus/test";
 import type { Bitmap } from "../src/index.ts";
-import { convert, DEFAULT_RAMP, toAnsi, toHtml, toSvg, toText } from "../src/index.ts";
+import {
+  convert,
+  cssVariablePalette,
+  DEFAULT_RAMP,
+  toAnsi,
+  toHtml,
+  toSvg,
+  toText,
+} from "../src/index.ts";
 
 /** 合成画像を作る。paint は各画素の [r, g, b] を返す */
 function bitmap(
@@ -146,4 +154,33 @@ test("toAnsi は前景色と背景色のエスケープを出す", () => {
   expect(ansi).toContain("\u001b[38;2;255;0;0m");
   expect(ansi).toContain("\u001b[48;2;0;0;255m");
   expect(ansi.endsWith("\u001b[0m")).toBe(true);
+});
+
+test("CSS 変数からパレットと対応表を作る", () => {
+  const { palette, colors } = cssVariablePalette({
+    "--bg": "#0b0e0f",
+    "--accent": " #7ee787 ",
+    "--same": "#0b0e0f",
+  });
+  expect(palette).toEqual(["#0b0e0f", "#7ee787"]);
+  expect(colors).toEqual({ "#0b0e0f": "var(--bg)", "#7ee787": "var(--accent)" });
+});
+
+test("colors を渡すと出力が CSS 変数になる", () => {
+  const { palette, colors } = cssVariablePalette({ "--bg": "#000000", "--accent": "#7ee787" });
+  const grid = convert(bitmap(8, 8, solid([126, 231, 135])), {
+    mode: "halfblock",
+    cols: 4,
+    palette,
+  });
+
+  expect(toHtml(grid, { colors })).toContain("color:var(--accent)");
+  expect(toSvg(grid, { colors })).toContain('fill="var(--accent)"');
+  // ANSI は実際の色の数値が要るので差し替えない
+  expect(toAnsi(grid)).toContain("126;231;135");
+});
+
+test("対応表に無い色はそのまま出る", () => {
+  const grid = convert(bitmap(8, 8, solid([255, 0, 0])), { mode: "halfblock", cols: 4 });
+  expect(toHtml(grid, { colors: { "#00ff00": "var(--x)" } })).toContain("color:#ff0000");
 });

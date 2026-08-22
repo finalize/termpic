@@ -226,3 +226,36 @@ export function convert(bitmap: Bitmap, options: ConvertOptions = {}): Grid {
 
   return { cols, rows, mode, cellAspect, cells };
 }
+
+/**
+ * CSS カスタムプロパティの組から、量子化用のパレットと
+ * 出力用の色の対応表を作る。
+ *
+ * ```ts
+ * const { palette, colors } = cssVariablePalette({
+ *   "--bg": "#0b0e0f",
+ *   "--accent": "#7ee787",
+ * });
+ * const grid = convert(bitmap, { palette });
+ * toHtml(grid, { colors }); // 色が var(--accent) で出る
+ * ```
+ *
+ * 役割（変数名）で色を持つので、ライト/ダークでトークンの値が入れ替わる
+ * サイトなら、出力した絵もテーマの切り替えに追従する。
+ * 同じ色が複数の名前に割り当てられている場合は、先に現れた名前を使う。
+ */
+export function cssVariablePalette(variables: Readonly<Record<string, string>>): {
+  palette: string[];
+  colors: Record<string, string>;
+} {
+  const palette: string[] = [];
+  const colors: Record<string, string> = {};
+
+  for (const [name, value] of Object.entries(variables)) {
+    const hex = formatHex(value.trim());
+    if (colors[hex] !== undefined) continue;
+    palette.push(hex);
+    colors[hex] = `var(${name})`;
+  }
+  return { palette, colors };
+}

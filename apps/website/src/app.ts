@@ -2,7 +2,7 @@ import type { Bitmap, Grid } from "termpic";
 import { convert, toAnsi, toHtml, toSvg, toText } from "termpic";
 import { measureCellAspect } from "./cell.ts";
 import { readBitmap, sampleBitmap } from "./image.ts";
-import { toConvertOptions } from "./options.ts";
+import { toColorMapping, toConvertOptions } from "./options.ts";
 import type { FormValues } from "./options.ts";
 
 const FORMATS = ["html", "svg", "text", "ansi"] as const;
@@ -48,6 +48,7 @@ export function mount(root: HTMLElement): void {
       <select id="palette">
         <option value="original">元の色のまま</option>
         <option value="site">サイトの8色に寄せる</option>
+        <option value="site-vars">サイトの8色 + CSS 変数で出力</option>
       </select>
     </div>
     <div class="field">
@@ -122,15 +123,17 @@ export function mount(root: HTMLElement): void {
   });
 
   const serialize = (target: Grid): string => {
+    const colors = toColorMapping(values());
     switch (format) {
       case "svg":
-        return toSvg(target, { cellSize: 8, alt: "termpic の出力" });
+        return toSvg(target, { cellSize: 8, alt: "termpic の出力", colors });
       case "text":
         return toText(target);
       case "ansi":
+        // ANSI は実際の色の数値が要るので CSS 変数には差し替えない
         return toAnsi(target);
       default:
-        return toHtml(target, { alt: "termpic の出力" });
+        return toHtml(target, { alt: "termpic の出力", colors });
     }
   };
 
