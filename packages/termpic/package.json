@@ -1,0 +1,52 @@
+{
+  "name": "termpic",
+  "version": "0.0.0",
+  "description": "Convert images into terminal art: ASCII ramps, half-block color cells, and palette quantization.",
+  "keywords": [
+    "ansi",
+    "ascii-art",
+    "dithering",
+    "image",
+    "pixel-art",
+    "terminal"
+  ],
+  "homepage": "https://github.com/finalize/termpic#readme",
+  "bugs": {
+    "url": "https://github.com/finalize/termpic/issues"
+  },
+  "license": "MIT",
+  "author": "finalize",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/finalize/termpic.git",
+    "directory": "packages/termpic"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "contrast-kit": "link:../../../contrast-kit/packages/contrast"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "bumpp": "^11.1.0",
+    "typescript": "^7.0.2",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

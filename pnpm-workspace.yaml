@@ -1,0 +1,31 @@
+packages:
+  - apps/*
+  - packages/*
+  - tools/*
+
+catalogMode: prefer
+
+# wrangler が依存する workerd / esbuild はインストール時にビルドスクリプトを走らせる
+allowBuilds:
+  esbuild: true
+  workerd: true
+
+# 公開から24時間経っていないパッケージは選ばない。
+# 明示しないと解決時に効かず、手元では通って CI のロックファイル検証で落ちる。
+minimumReleaseAge: 1440
+
+catalog:
+  "@types/node": ^24
+  "@vitest/browser-playwright": ^4.1.11
+  playwright: ^1.62.1
+  typescript: ^7.0.2
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.9
+  vite-plus: 0.2.9
+  wrangler: ^4.125.0
+overrides:
+  vite: "catalog:"
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: "*"

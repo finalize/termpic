@@ -1,0 +1,9 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "termpic",
+  "compatibility_date": "2026-08-23",
+  // Vite のビルド結果をそのまま配信する。Worker のコードは持たない（main なし）
+  "assets": {
+    "directory": "./dist",
+  },
+}

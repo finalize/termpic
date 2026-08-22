@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check & test & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.22.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # check は website から termpic の型（dist/index.d.mts）を解決するため、先にビルドする
+      - name: ビルド
+        run: pnpm exec vp run -r build
+      - name: 整形・lint・型チェック
+        run: pnpm exec vp check
+      - name: Chromium を取得
+        working-directory: apps/website
+        run: pnpm exec playwright install chromium
+      - name: テスト
+        run: pnpm exec vp run -r test
+      - name: スクリーンショットを保存
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: apps/website/tests/browser/__screenshots__/
+          retention-days: 3
+
+  deploy:
+    name: deploy to Cloudflare
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.22.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vp run -r build
+      - name: デプロイ
+        working-directory: apps/website
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::notice::CLOUDFLARE_API_TOKEN が未設定のためデプロイをスキップしました"
+            exit 0
+          fi
+          pnpm exec wrangler deploy

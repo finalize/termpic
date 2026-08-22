@@ -1,0 +1,35 @@
+name: Update screenshots
+
+# ビジュアルリグレッションの基準画像は撮影したプラットフォームごとに別ファイル。
+# 見た目を意図的に変えたら、これを手で回して Linux 用を作り直し、artifact を持ち帰る。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.22.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vp run -r build
+      - name: Chromium を取得
+        working-directory: apps/website
+        run: pnpm exec playwright install chromium
+      - name: 基準画像を作り直す
+        run: pnpm exec vp run website#test -u
+      - uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: apps/website/tests/browser/__screenshots__/
+          retention-days: 7
