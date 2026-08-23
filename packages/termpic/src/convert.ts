@@ -286,6 +286,16 @@ interface CellContext {
   threshold: number;
 }
 
+/**
+ * ほぼ一様なマスとみなす明度の幅。
+ *
+ * これ未満のマスを明暗に二分しても、前景色と背景色がほぼ同じなので
+ * 描き分けの意味がなく、平坦な面に無意味な模様が出るだけになる。
+ * 実写真で測ると 0.03 で無意味な分割がちょうど無くなり、
+ * それ以上に上げると実際の描き分けまで潰れる。
+ */
+const FLAT_CELL_RANGE = 0.03;
+
 /** 明るい側と暗い側に二分し、どの小マスが明るい側かをビットで返す */
 function splitByLightness(colors: readonly string[]): {
   bits: number;
@@ -293,7 +303,16 @@ function splitByLightness(colors: readonly string[]): {
   dark: string;
 } {
   const levels = colors.map((color) => toOklab(color).L);
-  const middle = (Math.min(...levels) + Math.max(...levels)) / 2;
+  const lowest = Math.min(...levels);
+  const highest = Math.max(...levels);
+
+  // 差がほとんど無いマスは、単色で塗りつぶす（全ビットを立てる）
+  if (highest - lowest < FLAT_CELL_RANGE) {
+    const flat = averageHex(colors);
+    return { bits: (1 << colors.length) - 1, light: flat, dark: flat };
+  }
+
+  const middle = (lowest + highest) / 2;
 
   let bits = 0;
   const lightGroup: string[] = [];
@@ -480,7 +499,7 @@ export function extractPalette(bitmap: Bitmap, count = 16, sampleLimit = 20_000)
     ];
   }
 
-  return boxes
+  const colors = boxes
     .filter((box) => box.length > 0)
     .map((box) => {
       const sum = box.reduce(
@@ -497,6 +516,9 @@ export function extractPalette(bitmap: Bitmap, count = 16, sampleLimit = 20_000)
         b: Math.round(sum.b / box.length),
       });
     });
+
+  // 画像の色数が要求より少ないと、切り分けた箱の平均が同じ色になることがある
+  return [...new Set(colors)];
 }
 
 /** 輪郭の向きに割り当てる文字。添字は 0=横 / 1=右下がり / 2=縦 / 3=右上がり */

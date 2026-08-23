@@ -257,3 +257,29 @@ test("SVG は四分割を矩形、点字を円で描く", () => {
   expect(braille).toContain("<circle");
   expect(braille).not.toContain("<text");
 });
+
+test("ほぼ一様なマスは分割せず単色にする", () => {
+  // 目では区別できない差しかない4つの小マス
+  const image = bitmap(4, 8, (x, y) => {
+    const noise = ((x + y) % 2) * 2;
+    return [200 + noise, 200 + noise, 200 + noise];
+  });
+  const [cell] = convert(image, { mode: "quadrant", cols: 1 }).cells;
+
+  expect(cell!.char).toBe("█");
+  expect(cell!.fg).toBe(cell!.bg);
+});
+
+test("はっきり違うマスはこれまで通り分割する", () => {
+  const image = bitmap(4, 8, (x) => (x < 2 ? [255, 255, 255] : [0, 0, 0]));
+  const [cell] = convert(image, { mode: "quadrant", cols: 1 }).cells;
+
+  expect(cell!.char).toBe("▌");
+  expect(cell!.fg).not.toBe(cell!.bg);
+});
+
+test("画像の色数が要求より少なければ、重複しない色数だけ返す", () => {
+  const image = bitmap(16, 16, (x) => (x < 8 ? [0, 0, 0] : [255, 255, 255]));
+  const palette = extractPalette(image, 8);
+  expect(new Set(palette).size).toBe(palette.length);
+});
