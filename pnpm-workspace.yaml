@@ -13,6 +13,9 @@ allowBuilds:
 # 公開から24時間経っていないパッケージは選ばない。
 # 明示しないと解決時に効かず、手元では通って CI のロックファイル検証で落ちる。
 minimumReleaseAge: 1440
+# 自分で公開したパッケージは出所が分かっているので、24時間ルールから外す
+minimumReleaseAgeExclude:
+  - contrast-kit
 
 catalog:
   "@types/node": ^24

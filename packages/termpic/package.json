@@ -1,6 +1,6 @@
 {
   "name": "termpic",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Convert images into terminal art: ASCII ramps, half-block color cells, and palette quantization.",
   "keywords": [
     "ansi",
@@ -40,7 +40,7 @@
     "prepublishOnly": "vp run build"
   },
   "dependencies": {
-    "contrast-kit": "link:../../../contrast-kit/packages/contrast"
+    "contrast-kit": "^0.2.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
