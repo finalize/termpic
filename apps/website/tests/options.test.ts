@@ -1,5 +1,11 @@
 import { expect, test } from "vite-plus/test";
-import { estimateCells, SITE_PALETTE, toColorMapping, toConvertOptions } from "../src/options.ts";
+import {
+  estimateCells,
+  SITE_PALETTE,
+  toColorMapping,
+  toConvertOptions,
+  usesExtractedPalette,
+} from "../src/options.ts";
 
 const base = {
   mode: "halfblock",
@@ -16,7 +22,20 @@ test("既定値をそのまま変換する", () => {
     palette: undefined,
     dither: false,
     background: "dark",
+    edges: false,
   });
+});
+
+test("4つのモードをそのまま通し、想定外は halfblock に落とす", () => {
+  for (const mode of ["ascii", "halfblock", "quadrant", "braille"]) {
+    expect(toConvertOptions({ ...base, mode }).mode).toBe(mode);
+  }
+  expect(toConvertOptions({ ...base, mode: "???" }).mode).toBe("halfblock");
+});
+
+test("画像から抽出する設定かを判定する", () => {
+  expect(usesExtractedPalette({ ...base, palette: "extract" })).toBe(true);
+  expect(usesExtractedPalette({ ...base, palette: "site" })).toBe(false);
 });
 
 test("マス数は 8〜240 に丸める", () => {

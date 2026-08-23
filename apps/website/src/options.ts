@@ -25,7 +25,10 @@ export interface FormValues {
   palette: string;
   dither: string;
   background: string;
+  edges?: string;
 }
+
+const MODES = new Set(["ascii", "halfblock", "quadrant", "braille"]);
 
 const usesSitePalette = (choice: string): boolean => choice === "site" || choice === "site-vars";
 
@@ -36,12 +39,18 @@ const usesSitePalette = (choice: string): boolean => choice === "site" || choice
 export function toConvertOptions(values: FormValues): ConvertOptions {
   const cols = Number.parseInt(values.cols, 10);
   return {
-    mode: values.mode === "ascii" ? "ascii" : "halfblock",
+    mode: MODES.has(values.mode) ? (values.mode as ConvertOptions["mode"]) : "halfblock",
     cols: Number.isFinite(cols) ? Math.min(240, Math.max(8, cols)) : 60,
     palette: usesSitePalette(values.palette) ? [...SITE_PALETTE] : undefined,
     dither: values.dither === "true",
     background: values.background === "light" ? "light" : "dark",
+    edges: values.edges === "true",
   };
+}
+
+/** 画像自身から色を抽出する設定かどうか */
+export function usesExtractedPalette(values: FormValues): boolean {
+  return values.palette === "extract";
 }
 
 /**

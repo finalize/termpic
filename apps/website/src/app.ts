@@ -1,8 +1,9 @@
 import type { Bitmap, Grid } from "termpic";
-import { convert, toAnsi, toHtml, toSvg, toText } from "termpic";
+import { convert, extractPalette, toAnsi, toHtml, toSvg, toText } from "termpic";
+import { download, toPngBlob } from "./canvas.ts";
 import { measureCellAspect } from "./cell.ts";
 import { readBitmap, sampleBitmap } from "./image.ts";
-import { toColorMapping, toConvertOptions } from "./options.ts";
+import { toColorMapping, toConvertOptions, usesExtractedPalette } from "./options.ts";
 import type { FormValues } from "./options.ts";
 
 const FORMATS = ["html", "svg", "text", "ansi"] as const;
@@ -36,6 +37,8 @@ export function mount(root: HTMLElement): void {
       <label for="mode">描き方</label>
       <select id="mode">
         <option value="halfblock">半ブロック（上下2色のマス）</option>
+        <option value="quadrant">四分割（横の解像度が倍）</option>
+        <option value="braille">点字（最も細かい）</option>
         <option value="ascii">ASCII（濃淡の文字）</option>
       </select>
     </div>
@@ -47,6 +50,7 @@ export function mount(root: HTMLElement): void {
       <label for="palette">色</label>
       <select id="palette">
         <option value="original">元の色のまま</option>
+        <option value="extract">画像から16色を抽出</option>
         <option value="site">サイトの8色に寄せる</option>
         <option value="site-vars">サイトの8色 + CSS 変数で出力</option>
       </select>
@@ -61,6 +65,13 @@ export function mount(root: HTMLElement): void {
     <div class="field">
       <label for="aspect">1マスの縦横比</label>
       <input id="aspect" type="number" min="1" max="4" step="0.01" />
+    </div>
+    <div class="field">
+      <label for="edges">輪郭を拾う（ASCII のみ）</label>
+      <select id="edges">
+        <option value="false">なし</option>
+        <option value="true">あり</option>
+      </select>
     </div>
     <div class="field">
       <label for="background">置く背景</label>
@@ -84,6 +95,7 @@ export function mount(root: HTMLElement): void {
         (format, index) =>
           `<button type="button" role="tab" data-format="${format}" aria-selected="${index === 0}">${format}</button>`,
       ).join("")}
+      <button type="button" id="png" class="download">PNG で保存</button>
     </div>
     <textarea id="output" readonly rows="10" spellcheck="false"></textarea>
     <p class="hint" id="hint"></p>
@@ -105,7 +117,7 @@ export function mount(root: HTMLElement): void {
   const drop = root.querySelector<HTMLLabelElement>(".drop")!;
   const tabs = [...root.querySelectorAll<HTMLButtonElement>("[data-format]")];
 
-  const controls = ["mode", "cols", "palette", "dither", "background", "aspect"] as const;
+  const controls = ["mode", "cols", "palette", "dither", "background", "aspect", "edges"] as const;
 
   // 実際の文字セルに合わせないと、HTML として描いたときに絵が歪む
   const aspectInput = $<HTMLInputElement>("aspect");
@@ -120,6 +132,7 @@ export function mount(root: HTMLElement): void {
     palette: $<HTMLSelectElement>("palette").value,
     dither: $<HTMLSelectElement>("dither").value,
     background: $<HTMLSelectElement>("background").value,
+    edges: $<HTMLSelectElement>("edges").value,
   });
 
   const serialize = (target: Grid): string => {
@@ -138,9 +151,13 @@ export function mount(root: HTMLElement): void {
   };
 
   const render = (): void => {
+    const form = values();
     const cellAspect = Number.parseFloat(aspectInput.value);
+    // 画像から色を抽出する設定のときだけ、その場でパレットを作る
+    const extracted = usesExtractedPalette(form) ? extractPalette(bitmap, 16) : undefined;
     grid = convert(bitmap, {
-      ...toConvertOptions(values()),
+      ...toConvertOptions(form),
+      ...(extracted ? { palette: extracted } : {}),
       ...(Number.isFinite(cellAspect) && cellAspect > 0 ? { cellAspect } : {}),
     });
     preview.innerHTML = toHtml(grid, { alt: "変換結果のプレビュー" });
@@ -173,6 +190,11 @@ export function mount(root: HTMLElement): void {
   };
 
   fileInput.addEventListener("change", () => void load(fileInput.files?.[0]));
+
+  $<HTMLButtonElement>("png").addEventListener("click", () => {
+    if (!grid) return;
+    void toPngBlob(grid).then((blob) => download(blob, "termpic.png"));
+  });
 
   drop.addEventListener("dragover", (event) => {
     event.preventDefault();

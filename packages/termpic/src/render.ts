@@ -1,3 +1,4 @@
+import { BRAILLE_BITS, QUADRANTS } from "./convert.ts";
 import type { Grid } from "./convert.ts";
 
 const HTML_ESCAPES: Record<string, string> = {
@@ -126,6 +127,44 @@ export function toSvg(grid: Grid, options: SvgOptions = {}): string {
       const cellAt = (col: number) => grid.cells[row * grid.cols + col]!;
       emitRow((col) => cellAt(col).fg, row * cellH);
       emitRow((col) => cellAt(col).bg ?? cellAt(col).fg, row * cellH + halfH);
+    }
+  } else if (grid.mode === "quadrant") {
+    // 文字から 4 分割のビットを引き、点いている側を前景色で塗る
+    const halfW = cellW / 2;
+    const halfH = cellH / 2;
+    for (let row = 0; row < grid.rows; row++) {
+      for (let col = 0; col < grid.cols; col++) {
+        const cell = grid.cells[row * grid.cols + col]!;
+        const bits = Math.max(0, QUADRANTS.indexOf(cell.char));
+        for (let corner = 0; corner < 4; corner++) {
+          const color = (bits & (1 << corner)) === 0 ? (cell.bg ?? cell.fg) : cell.fg;
+          parts.push(
+            `<rect x="${col * cellW + (corner % 2) * halfW}" y="${row * cellH + Math.floor(corner / 2) * halfH}" width="${halfW}" height="${halfH}" fill="${mapColor(color, options.colors)}"/>`,
+          );
+        }
+      }
+    }
+  } else if (grid.mode === "braille") {
+    // 点字は 2x4 の点。フォントに頼らず円で描く
+    const dotW = cellW / 2;
+    const dotH = cellH / 4;
+    const radius = Math.min(dotW, dotH) * 0.38;
+    for (let row = 0; row < grid.rows; row++) {
+      for (let col = 0; col < grid.cols; col++) {
+        const cell = grid.cells[row * grid.cols + col]!;
+        const pattern = (cell.char.codePointAt(0) ?? 0x2800) - 0x2800;
+        parts.push(
+          `<rect x="${col * cellW}" y="${row * cellH}" width="${cellW}" height="${cellH}" fill="${mapColor(cell.bg ?? cell.fg, options.colors)}"/>`,
+        );
+        for (let y = 0; y < 4; y++) {
+          for (let x = 0; x < 2; x++) {
+            if ((pattern & (1 << BRAILLE_BITS[y]![x]!)) === 0) continue;
+            parts.push(
+              `<circle cx="${col * cellW + (x + 0.5) * dotW}" cy="${row * cellH + (y + 0.5) * dotH}" r="${radius}" fill="${mapColor(cell.fg, options.colors)}"/>`,
+            );
+          }
+        }
+      }
     }
   } else {
     for (let row = 0; row < grid.rows; row++) {
