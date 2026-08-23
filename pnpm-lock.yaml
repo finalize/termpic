@@ -260,8 +260,8 @@ importers:
   packages/termpic:
     dependencies:
       contrast-kit:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.3.0
+        version: 0.3.0
     devDependencies:
       '@types/node':
         specifier: ^26.1.1
@@ -1476,8 +1476,8 @@ packages:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
     engines: {node: '>=18'}
 
-  contrast-kit@0.2.0:
-    resolution: {integrity: sha512-UDn4W6UV3iQgThPvyvUUK3yTLGdpcD7vqXvzeNPoD1Ka/ev/PUH9PzuycipDyZ2uIJ3pUTcqBKnDsKAQNH3EGQ==}
+  contrast-kit@0.3.0:
+    resolution: {integrity: sha512-nECkYeEoeJ9czl8iP4BQL9waaVSiB7VXAZpz01ll5eTkcdf3lY2cbikQWPgMG3gd89xzjToagxKAxMPE9P3txg==}
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -2734,7 +2734,7 @@ snapshots:
 
   chai@6.2.2: {}
 
-  contrast-kit@0.2.0: {}
+  contrast-kit@0.3.0: {}
 
   convert-source-map@2.0.0: {}
 
