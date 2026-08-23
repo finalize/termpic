@@ -174,3 +174,19 @@ textarea {
   margin-top: 2rem;
   font-size: 0.85rem;
 }
+
+.download {
+  margin-left: auto;
+  padding: 0.25rem 0.8rem;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.download:hover {
+  background: color-mix(in oklab, var(--accent) 15%, transparent);
+}

@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 import type { Bitmap } from "../src/index.ts";
 import {
   convert,
+  extractPalette,
   cssVariablePalette,
   DEFAULT_RAMP,
   toAnsi,
@@ -183,4 +184,76 @@ test("colors を渡すと出力が CSS 変数になる", () => {
 test("対応表に無い色はそのまま出る", () => {
   const grid = convert(bitmap(8, 8, solid([255, 0, 0])), { mode: "halfblock", cols: 4 });
   expect(toHtml(grid, { colors: { "#00ff00": "var(--x)" } })).toContain("color:#ff0000");
+});
+
+test("四分割は横の解像度が倍になり、上下2色を持つ", () => {
+  // 左半分が赤、右半分が青の 1 マス
+  const image = bitmap(4, 8, (x) => (x < 2 ? [255, 0, 0] : [0, 0, 255]));
+  const grid = convert(image, { mode: "quadrant", cols: 1 });
+
+  expect(grid.rows).toBe(1);
+  const [cell] = grid.cells;
+  // 左上と左下が明るい側（赤）なので ▌
+  expect(cell!.char).toBe("▌");
+  expect(cell!.fg).toBe("#ff0000");
+  expect(cell!.bg).toBe("#0000ff");
+});
+
+test("点字は 1 マスに 2x4 の点を持ち、背景色も持つ", () => {
+  const image = bitmap(8, 16, (_x, y) => (y < 8 ? [255, 255, 255] : [0, 0, 0]));
+  const grid = convert(image, { mode: "braille", cols: 4 });
+
+  for (const cell of grid.cells) {
+    const code = cell.char.codePointAt(0)!;
+    expect(code).toBeGreaterThanOrEqual(0x2800);
+    expect(code).toBeLessThanOrEqual(0x28ff);
+    expect(cell.bg).toBeDefined();
+  }
+});
+
+test("画像から代表色を抽出する", () => {
+  // 赤と青がちょうど半分ずつ
+  const image = bitmap(16, 16, (x) => (x < 8 ? [200, 30, 30] : [30, 30, 200]));
+  const palette = extractPalette(image, 2);
+
+  expect(palette).toHaveLength(2);
+  // 並び順は分割の過程で決まるので、集合として一致すればよい
+  expect([...palette].sort()).toEqual(["#1e1ec8", "#c81e1e"]);
+  // 何度呼んでも同じ結果になる
+  expect(extractPalette(image, 2)).toEqual(palette);
+});
+
+test("色数を増やしても要求より多くはならない", () => {
+  const image = bitmap(16, 16, (x, y) => [x * 16, y * 16, 128]);
+  expect(extractPalette(image, 8).length).toBeLessThanOrEqual(8);
+  expect(() => extractPalette(image, 0)).toThrow(TypeError);
+});
+
+test("輪郭検出は境界の向きに応じた文字を割り当てる", () => {
+  const horizontal = bitmap(40, 80, (_x, y) => (y < 40 ? [255, 255, 255] : [0, 0, 0]));
+  const vertical = bitmap(40, 80, (x) => (x < 20 ? [255, 255, 255] : [0, 0, 0]));
+
+  const chars = (image: Bitmap): string[] =>
+    convert(image, { mode: "ascii", cols: 20, edges: true }).cells.map((cell) => cell.char);
+
+  expect(chars(horizontal)).toContain("-");
+  expect(chars(vertical)).toContain("|");
+  // 閾値を上げれば輪郭は拾われなくなる
+  expect(
+    convert(horizontal, { mode: "ascii", cols: 20, edges: 5 }).cells.every(
+      (cell) => !"-|/\\".includes(cell.char),
+    ),
+  ).toBe(true);
+});
+
+test("SVG は四分割を矩形、点字を円で描く", () => {
+  const image = bitmap(8, 8, (x) => (x < 4 ? [255, 0, 0] : [0, 0, 255]));
+
+  const quadrant = toSvg(convert(image, { mode: "quadrant", cols: 4 }));
+  expect(quadrant).toContain("<rect");
+  expect(quadrant).not.toContain("<text");
+
+  const braille = toSvg(convert(image, { mode: "braille", cols: 4 }));
+  expect(braille).toContain("<circle");
+  expect(braille).not.toContain("<text");
 });
