@@ -1,6 +1,6 @@
 {
   "name": "termpic",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Convert images into terminal art: ASCII ramps, half-block color cells, and palette quantization.",
   "keywords": [
     "ansi",
