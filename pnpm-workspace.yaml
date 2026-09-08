@@ -20,7 +20,7 @@ minimumReleaseAgeExclude:
 catalog:
   "@types/node": ^26
   "@vitest/browser-playwright": ^4.1.11
-  playwright: ^1.62.1
+  playwright: ^1.63.0
   typescript: ^7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@0.2.9
   vite-plus: 0.3.0
