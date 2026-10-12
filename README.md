@@ -27,7 +27,7 @@ vp run -r test
 | unit    | `apps/website/tests`         | フォームの値の解釈                                         |
 | browser | `apps/website/tests/browser` | 実物の Chromium での DOM 操作とビジュアルリグレッション    |
 
-基準画像は撮影プラットフォームごとに別ファイル（`preview-chromium-darwin.png` / `-linux.png`）。見た目を意図的に変えたら、手元で `vp run website#test -u`、Linux 用は `gh workflow run update-screenshots.yml` の artifact を持ち帰ってコミットする。
+基準画像は撮影プラットフォームごとに別ファイル（`preview-chromium-darwin.png` / `-linux.png`）。見た目を意図的に変えたら、手元で `vp run website#test -u`。Linux 用は Linux の上で同じものを実行して撮り、コミットする（CI には作り直す手段が無い）。
 
 ## 1マスの縦横比について
 
