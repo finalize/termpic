@@ -37,12 +37,9 @@ Web ツールは決め打ちにせず、`measureCellAspect()` でプレビュー
 
 ## デプロイ
 
-`apps/website` は Cloudflare Workers の静的アセットとして配信する。main にマージされると CI が自動でデプロイする。
+いまは公開していない。2026-11-02 に Cloudflare の Worker（`termpic`）を消し、CI からデプロイを外した。依存の自動更新（Dependabot と自動マージ）も止めた。
 
-```bash
-gh secret set CLOUDFLARE_API_TOKEN --repo finalize/termpic
-gh secret set CLOUDFLARE_ACCOUNT_ID --repo finalize/termpic
-```
+`apps/website` は Cloudflare Workers の静的アセットとして配信する設定（`apps/website/wrangler.jsonc`）のまま残してある。また出すときは、この設定で Worker を作り直す。
 
 ## ライブラリ
 
